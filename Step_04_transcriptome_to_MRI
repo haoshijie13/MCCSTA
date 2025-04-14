@@ -1,0 +1,180 @@
+###==================== Marmoset Coronal to MRI 2D Registration Pipeline =============================
+## This script performs 2D slice-wise registration between marmoset gene expression data (coronal slices) 
+## and MRI template using ANTs. All original steps including critical renaming operations are preserved.
+
+# Set root directory for the project
+root_dir=/marmoset_gene_cortex/kj_ants_to_mri_2D
+
+##========================= Data Preprocessing ===========================
+## Expand and rotate totalRNA nii data for better registration alignment
+
+# Expand spatial dimensions using 3dZeropad
+for i in `ls *.nii`
+do
+    3dZeropad -RL 1000 -AP 1000 -prefix large_${i} $i
+done
+
+# Manual rotation performed in Mango software for initial alignment
+
+##========================= Template Preparation =========================
+## Process MRI template and cortical ROI for registration
+
+# Resample MRI template to 0.025mm isotropic resolution
+ResampleImage 3 Template_sym_T2_80um_rotate_x6_z1_L.nii.gz Template_sym_T2_80um_rotate_x6_z1_L_iso0025.nii.gz 0.025x0.025x0.025
+
+# Resample cortical ROI mask with nearest-neighbor interpolation 
+ResampleImage 3 MBM_cortex_vPaxinos_80um_d_L_rotate_x6_z1_sm.nii.gz MBM_cortex_vPaxinos_80um_d_L_rotate_x6_z1_sm_iso0025.nii.gz 0.025x0.025x0.025 0 1
+
+##========================= Slice Extraction ============================
+## Extract 2D slices from 3D volumes for slice-wise registration
+
+# Create output directory
+mkdir ${root_dir}/MRI_rotate_slice_0025/
+
+# Split MRI template into Y-axis slices
+fslsplit Template_* MRI_L_slice -y
+
+# Split cortical ROI into Y-axis slices
+fslsplit MBM_* MRI_cortex_ROI_L_slice -y
+
+##========================= Slice Selection ==============================
+## Select slices in range T402-T528 for registration
+
+cd /mnt/Data16Tb/Data/xiaojia/V1-V4/Marmoset_Brain_Mapping_v2.1.2_20200131/v2_rotated_25um/MRI_slice
+
+# Copy selected slices to working directory
+for i in `cat ${root_dir}/reg_all_slice_0025_4_T402-528/T402-T528_iso0025`
+do
+    cp MRI_L_slice_g1_${i}.nii.gz ../MRI_choose_slice
+    cp MRI_L_slice_g1_0${i}.nii.gz ../MRI_choose_slice
+    cp MRI_L_slice_g1_00${i}.nii.gz ../MRI_choose_slice
+done
+
+##========================= File Renaming Operations ========================
+## Renumber slices to T-series format (T402-T528)
+
+# 1. Navigate to target directory containing slice files
+cd ../MRI_choose_slice_0025_4_T402-528
+
+# 2. Create temporary directory for special range slices (525-528)
+mkdir T525-528 
+
+# 3. Move specific slices to special range directory using pattern matching:
+mv *slice*0109* T525-528/  # T528 (slice 109)
+mv *slice*0099* T525-528/  # T527 (slice 99)
+mv *slice*0089* T525-528/  # T526 (slice 89)
+mv *slice*0079* T525-528/  # T525 (slice 79)
+
+# 4. Rename remaining g1 files (T522-T403) using descending counter
+a=522  # Starting T-number
+for i in `ls *g1*`; do
+    mv $i ${i}_T${a}.nii.gz  # Append T-number to filename
+    a=$((a-1))               # Decrement counter
+done
+
+# 5. Process special range directory
+cd T525-528/
+
+# 6. Rename files in special range with correct T-numbers (528-525)
+a=528  # Starting T-number for special range
+for i in `ls *g1*`; do
+    mv $i ${i}_T${a}.nii.gz  # Append T-number to filename
+    a=$((a-1))               # Decrement counter
+done
+
+# 7. Move renamed files back to parent directory
+mv * ../
+
+# 8. Return to parent directory and remove empty temporary folder
+cd ../
+rm -d T525-528/
+
+##========================= Orientation Correction =========================
+## Maintain original file orientation operations
+
+for i in LIP_MRI_L_slice*.nii.gz; do
+    # Convert to LIP orientation for registration compatibility
+    3dresample -orient LIP -prefix LIP_${i} -input $i
+    
+    # Finalize in LPI orientation for visualization
+    3drefit -orient LPI LIP_${i}
+done
+
+##========================= Cortical Mask Processing ========================
+## Preserve mask creation steps exactly as in original
+
+for i in {402..528}; do
+    # Create masked cortex volumes
+    fslmaths LIP_MRI_L_slice*_T${i}.nii.gz \
+    -mas LIP_MRI_cortex_ROI_L_slice*_T${i}.nii.gz \
+    cortex_LIP_MRI_L_T${i}.nii.gz
+    
+    # Binarize masks for registration
+    fslmaths cortex_LIP_MRI_L_T${i}.nii.gz -bin \
+    cortexmask_LIP_MRI_L_T${i}.nii.gz
+done
+
+##========================= Registration Core Steps ========================
+## Maintain original registration loop structure
+
+for i in {402..528}; do
+    echo "Processing T${i}"
+    antsRegistrationSyNQuick.sh -d 2 \
+    -m ${kj_dir}/LIP2_head_reg_slice_T${i}_ROI.nii.gz \
+    -f ${mri_dir}/cortexmask_LIP_MRI_L_T${i}.nii.gz \
+    -o slice_T${i}_kj_to_MRI \
+    -n 120
+done
+##========================= Post-registration Processing ==================
+## Keep all result organization steps
+
+# Create 3D organized results
+fslmerge -z merged_results.nii.gz *Warped.nii.gz
+
+# Maintain final orientation correction
+3dresample -orient RPI -prefix final_results_RPI.nii.gz -input merged_results.nii.gz
+
+##======================= Verification Steps =============================
+## Preserve original quality checks
+
+# Check file dimensions
+fslinfo final_results_RPI.nii.gz
+
+# Validate orientation
+3dinfo -orient final_results_RPI.nii.gz
+
+##========================= Transformation Application ==================
+## Apply computed transforms to various datasets
+
+# Apply to RNA data
+for i in `seq 402 528`
+do
+    antsApplyTransforms -d 2 \
+    -i ${kj_slice_dir}/LIP2_head_T${i}_coronal*.nii.gz \
+    -r ${MRI_slice_dir}/cortexmask_LIP_MRI_L_T${i}.nii.gz \
+    -t slice_T${i}_kj_to_MRI1Warp.nii.gz \
+    -t slice_T${i}_kj_to_MRI0GenericAffine.mat \
+    -o ${result_dir}/cortex_LIP2_head_T${i}_to_MRI.nii.gz 
+done
+
+# Apply to cell type data (parallel processing)
+numCPU=21
+for i in `seq 402 528`
+do
+    for j in `seq -w 207`
+    do
+        antsApplyTransforms -d 2 \
+        -i ${kj_slice_dir}/LIP2_LIP_head_cell_type_${j}_sm_sm_T${i}-00001.nii.gz \
+        -r ${MRI_slice_dir}/cortexmask_LIP_MRI_L_T${i}.nii.gz \
+        -t slice_T${i}_kj_to_MRI1Warp.nii.gz \
+        -t slice_T${kj_to_MRI0GenericAffine.mat \
+        -o ${result_dir}/LIP2_head_cell_type_${j}_sm_T${i}_to_MRI.nii.gz &
+    done
+    wait
+done
+
+
+##======================= replace sm_cortex_LIP2_head_T-all_to_MRI.nii.gz to 1536 slice 3D in the matlab =============================
+
+
+

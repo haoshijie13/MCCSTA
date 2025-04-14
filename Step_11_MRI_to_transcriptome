@@ -1,0 +1,66 @@
+##======================= MRI-to-GeneSpace Registration ========================
+## Perform inverse registration to map MRI data to gene expression space
+
+# Set directory paths for cross-modal registration
+kj_slice_dir=${root_dir}/coronal_slice/marmoset_coronal_cortexmask_reg_rotate_large_raw_nii_T402-528
+MRI_slice_dir=${root_dir}/MRI_choose_slice_0025_4_T402-528/LIP_slice
+result_dir=${root_dir}/reg_all_slice_0025_4_T402-528/apply_result_ROI_to_kj
+
+# Perform inverse registration for slices 520-528
+cd ${root_dir}/reg_all_slice_0025_4_T402-528
+for i in {520..528}; do
+    echo "Inverse registration for T${i}"
+    antsRegistrationSyNQuick.sh -d 2 \
+    -m ${MRI_slice_dir}/cortexmask_LIP_MRI_L_T${i}.nii.gz \
+    -f ${kj_slice_dir}/LIP2_head_reg_slice_T${i}_ROI.nii.gz \
+    -o cortexmask_LIP_MRI_L_T${i}_to_kj \
+    -n 120
+done
+
+##=================== Apply Transforms to MRI Gradient Data ====================
+## Transform MRI gradient data (g1) to gene expression space
+
+# Configure paths for gradient data transformation
+MRI_gradient_dir=/Marmoset_Brain_Mapping_v2.1.2_20200131/v2_rotated_25um/MRI_choose_slice
+cd ${result_dir}
+
+# Apply computed transforms to gradient data
+for i in {402..528}; do
+    echo "Transforming gradient data for T${i}"
+    antsApplyTransforms -d 2 \
+    -i ${MRI_gradient_dir}/LIP_*g1*.nii.gz_T${i}.nii.gz \
+    -r ${kj_slice_dir}/LIP2_head_reg_slice_T${i}_ROI.nii.gz \
+    -t ../reg_to_kj/cortexmask_LIP_MRI_L_T${i}_to_kj1Warp.nii.gz \
+    -t ../reg_to_kj/cortexmask_LIP_MRI_L_T${i}_to_kj0GenericAffine.mat \
+    -o MRI_choose_g1_kj/LIP_g1.nii.gz_T${i}.nii.gz
+done
+
+##================= Spatial Normalization & Volume Reconstruction ==============
+## Prepare data for 3D volume reconstruction and MATLAB processing
+
+# 1. Copy header information to maintain spatial metadata
+cp head_cortex_LIP_MRI_L_T-all.nii.gz head_cortex_LIP_MRI_L_T-all_in_MRIrotatex6z1_space.nii.gz
+
+# 2. MATLAB-dependent steps (pseudocode representation)
+#    - Replace 2D slice data into 1536-slice 3D volume
+#    - Align with reference template MBM_cortex_vPaxinos_80um_d_L_rotate_x6_z1_sm_iso0025.nii.gz
+
+# 3. 3D registration to raw MRI space
+antsRegistrationSyNQuick.sh -d 3 \
+-m MBM_cortex_vPaxinos_80um_d_L_rotate_x6_z1_sm_iso0025.nii.gz \
+-f MBM_cortex_vPaxinos_25um_L.nii.gz \
+-o MBM_cortex_vPaxinos_rotate_x6_z1_antsreturn_raw_0025 \
+-t r -n 100
+
+# 4. Apply final 3D transformation
+antsApplyTransforms -d 3 \
+-i head_cortex_LIP_MRI_L_T-all_in_MRIrotatex6z1_space_chazhitoM.nii \
+-f MBM_cortex_vPaxinos_25um.nii.gz \
+-o final_cortex_slice_mask.nii.gz \
+-t MBM_cortex_vPaxinos_rotate_x6_z1_antsreturn_raw_00250GenericAffine.mat
+
+
+
+
+echo "Pipeline execution completed." 
+
