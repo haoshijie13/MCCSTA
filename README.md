@@ -10,9 +10,8 @@
 ![image](https://github.com/user-attachments/assets/a72a2497-bdc6-43ca-bf5c-9255816f3460)
 
 ---
-### 📸 Code registrating MRI to spatial transcriptome can be found in # <span style="text-decoration: underline;">Registration of Stereo-seq Data with MRI Data</span> directory.
+### 📸 Code registrating MRI to spatial transcriptome can be found in _Registration of Stereo-seq Data with MRI Data_ directory.📸
 ---
-
 ### The process of Stereo-seq analysis of this paper in Stereo_anlysis:
 
 **01.Atlas_plot:** The code that showed the plotting of Stereo-seq cellbin data relates to Figure 1.
