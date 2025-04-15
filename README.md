@@ -19,6 +19,8 @@
 
 **...**
 
+**10.AU_region_gene:**  The code demonstrates the process of showing that the A1 region in humans is more similar to that in marmosets to Figure 7.
+
 **additional.1.MRIflatmaptoshp:**  The code was used to convert the four species MRI gii format (tif format) flatmap into shape file.
 
 **additional.2.MRIflatmapvisual:**  The code that showed how to plot the species shape file of flatmap.
