@@ -1,0 +1,45 @@
+##================= Gene Data Registration Pipeline ============================
+## Full processing pipeline for gene expression data registration
+
+# 1. Header standardization for gene data
+kj_slice_dir=${root_dir}/coronal_slice/marmoset_coronal_cortexmask_reg_rotate_large_raw_nii_T402-528
+gene_data_dir=/marmoset_V2_20220627/coronal_h5ad_gene_nifti/sevent_5000_to_cortex_rotate/reg_gene_cluster
+
+# Align gene data headers with reference space
+for j in {402..528}; do
+    cd ${gene_data_dir}/T${j}
+    echo "Standardizing headers for T${j}"
+    
+    # Parallel header synchronization (20 concurrent processes)
+    numCPU=20
+    for i in *; do
+        fslcpgeom ${kj_slice_dir}/LIP2_head_reg_slice_T${j}_ROI.nii.gz $i &
+        [[ $((++myCPU%numCPU)) -eq 0 ]] && wait
+    done
+done
+
+# 2. Coregistration application for selected slices
+mat_dir=${root_dir}/reg_all_slice_0025_4_T402-528/reg_to_MRI
+save_dir=/nfs/nfs46/Data18Tb/Data/xiaojia/marmoset_V2_20220627/coronal_h5ad_gene_nifti/sevent_5000_to_cortex_rotate_to_MRI_new
+
+# Process key slices with high-throughput computing
+for j in `seq 402 528`; do
+    cd ${gene_data_dir}/T${j}
+    echo "Processing gene data for T${j}"
+    
+    # Parallel transform application (40 concurrent processes)
+    numCPU=40
+    for i in *; do
+        antsApplyTransforms -d 2 \
+        -i $i \
+        -r ${MRI_slice_dir}/LIP_MRI_cortex_ROI_L_slice*_T${j}.nii.gz \
+        -t ${mat_dir}/slice_T${j}_kj_to_MRI1Warp.nii.gz \
+        -t ${mat_dir}/slice_T${j}_kj_to_MRI0GenericAffine.mat \
+        -o ${save_dir}/T${j}/${i}_to_MRI.nii.gz &
+        [[ $((++myCPU%numCPU)) -eq 0 ]] && wait
+    done
+done
+
+
+
+echo "Pipeline execution completed." 
