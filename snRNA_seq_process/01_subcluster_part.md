@@ -1,4 +1,4 @@
-# 1. RandomForets classicifer
+# 1. RandomForest classicifer
 
 ## 1.1 Traning and test data process
 
