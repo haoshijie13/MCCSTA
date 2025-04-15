@@ -1,7 +1,9 @@
 #Visualize function
 library(ggplot2)
 library(grid)
-Border <- read.csv('/mnt/SSD16Ta/huangzhi/Marmoset_Brain/Summary/segment/Border.txt')
+Archr_col <- c('#D51F26','#272E6A','#208A42','#89288F','#F47D2B','#FEE500','#8A9FD1',
+               '#C06CAB','#E6C2DC','#90D5E4','#89C75F','#F37B7D','#9983BD','#D24B27',
+               '#3BBCA8','#6E4B9E','#0C727C','#7E1416','#D8A767')
 plot_col_exp <- function(obj,col_exp,rev=FALSE,vmid=FALSE,min.cutoff=0,border=TRUE,max.cutoff=1,color=RColorBrewer::brewer.pal(11,'Spectral')[-6]){
     exp <- obj[,col_exp]
     if(min.cutoff!=0 | max.cutoff!=1){

@@ -69,6 +69,7 @@ imputation_celltype <- function(obj,segment.meta.data,assays='Neuron'){
     }
     obj@assays$RNA@var.features <- rownames(obj)
     obj[[assays]] <- obj[['RNA']]
+    obj@active.assay <- assays
     obj[['RNA']] <- NULL
     
     return(obj)
