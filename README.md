@@ -8,3 +8,17 @@
 *This multimodal atlas offers new understanding of primate cortical organization and evolution.*
 
 ![image](https://github.com/user-attachments/assets/a72a2497-bdc6-43ca-bf5c-9255816f3460)
+
+### The process of Stereo-seq analysis of this paper in Stereo_anlysis:
+
+**01.Atlas_plot:** The code that showed the plotting of Stereo-seq cellbin data relates to Figure 1.
+
+**02.Segment2flatmap:** The code used to convert the segment data into segment-flatmap and to combine the cell-type and gene data within the segment-flatmap relates to Figure S1.
+
+**03.Pr-Al_calculation:**  The code that showed the calculation of Pr - Al Index of different data (four species, region - level, segment - level) relates to Figure 2.
+
+**...**
+
+**additional.1.MRIflatmaptoshp:**  The code was used to convert the four species MRI gii format (tif format) flatmap into shape file.
+
+**additional.2.MRIflatmapvisual:**  The code that showed how to plot the species shape file of flatmap.
