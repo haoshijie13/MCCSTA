@@ -10,12 +10,10 @@
 ![image](https://github.com/user-attachments/assets/a72a2497-bdc6-43ca-bf5c-9255816f3460)
 
 ---
-***
----
-<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxuMOcdNwWiWNb_FPaD-Z54i0oa_R8Qu2H0A&s" alt="Example Image" width="30" height="30">  
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxuMOcdNwWiWNb_FPaD-Z54i0oa_R8Qu2H0A&s" alt="Example Image" width="50" height="50">  
 
 ### Code registrating MRI to spatial transcriptome can be found in <u>Registration of Stereo-seq Data with MRI Data</u> directory.
-
+---
 ### The process of Stereo-seq analysis of this paper in Stereo_anlysis:
 
 **01.Atlas_plot:** The code that showed the plotting of Stereo-seq cellbin data relates to Figure 1.
