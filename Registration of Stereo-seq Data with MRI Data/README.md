@@ -1,4 +1,4 @@
-# ​**​Marmoset Spatial Transcriptomics-MRI Integration Project​**​  
+# ​**​Marmoset Spatial Transcriptomics-MRI Integration​**​  
 *Combining single-cell resolution gene expression with neuroimaging in 3D space*
 
 ---
