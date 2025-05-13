@@ -1,6 +1,6 @@
 ## MCCSTA
 ### The codes employed in the 3-D multimodal atlas project of the marmoset cerebral cortex.
-### The data can be interactively view at https://db.cngb.org/stomics/mbcsta/.
+### The data can be interactively view at https://db.cngb.org/stomics/mccsta/.
 *We sincerely thank the support in database building and maintaining provided by China National GeneBank (CNGB).*
 ### The paper can be accessed at ...
 
